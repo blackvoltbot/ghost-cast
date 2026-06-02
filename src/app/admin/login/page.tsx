@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,20 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { Terminal } from "@/components/Terminal";
 import { ShieldAlert, Fingerprint } from "lucide-react";
 
+/**
+ * Admin Login Page
+ * Uses a mounting guard to prevent hydration mismatches caused by 
+ * environmental attribute injections (e.g., __gcruniqueid) and dynamic state.
+ */
 export default function AdminLoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [logs, setLogs] = useState(["WAITING FOR AUTHENTICATION..."]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +36,10 @@ export default function AdminLoginPage() {
     }, 1500);
   };
 
+  if (!mounted) {
+    return <div className="min-h-screen bg-[#0D0909]" />;
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0D0909] p-6">
       <div className="w-full max-w-md space-y-8">
@@ -36,7 +50,7 @@ export default function AdminLoginPage() {
           <p className="text-muted-foreground text-xs uppercase tracking-widest font-bold">Secure Access Required</p>
         </div>
 
-        <Card className="bg-black border-primary/30 rounded-none hacker-glow">
+        <Card className="bg-black border-primary/30 rounded-none hacker-glow" suppressHydrationWarning>
           <CardHeader className="space-y-1 border-b border-primary/10">
             <CardTitle className="text-sm font-bold tracking-widest text-primary uppercase flex items-center gap-2">
               <ShieldAlert className="w-4 h-4" />
@@ -44,7 +58,7 @@ export default function AdminLoginPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-4" suppressHydrationWarning>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Operator ID</label>
                 <Input 
@@ -52,6 +66,7 @@ export default function AdminLoginPage() {
                   placeholder="admin_root"
                   required
                   className="bg-primary/5 border-primary/20 rounded-none font-code text-primary placeholder:text-primary/20"
+                  suppressHydrationWarning
                 />
               </div>
               <div className="space-y-2">
@@ -61,6 +76,7 @@ export default function AdminLoginPage() {
                   placeholder="••••••••"
                   required
                   className="bg-primary/5 border-primary/20 rounded-none font-code text-primary placeholder:text-primary/20"
+                  suppressHydrationWarning
                 />
               </div>
               <Button 
