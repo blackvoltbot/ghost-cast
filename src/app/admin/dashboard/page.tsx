@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Terminal } from "@/components/Terminal";
@@ -11,7 +11,13 @@ import { createSession, SupportSession } from "@/lib/session-store";
 
 export default function AdminDashboard() {
   const [sessions, setSessions] = useState<SupportSession[]>([]);
-  const [logs, setLogs] = useState(["COMMAND CENTER LOADED.", "READY FOR NEW SESSIONS."]);
+  const [logs, setLogs] = useState<string[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setLogs(["COMMAND CENTER LOADED.", "READY FOR NEW SESSIONS."]);
+  }, []);
 
   const handleCreateRoom = () => {
     const newSession = createSession();
@@ -23,6 +29,8 @@ export default function AdminDashboard() {
     setSessions(prev => prev.filter(s => s.id !== id));
     setLogs(prev => [...prev, `SESSION REMOVED: ${id}`]);
   };
+
+  if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-[#0D0909] text-white p-6">
@@ -68,7 +76,7 @@ export default function AdminDashboard() {
                       <div className="space-y-2">
                         <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Client Gateway Link</label>
                         <div className="flex items-center gap-2 bg-primary/5 border border-primary/10 p-2 font-code text-xs text-primary/70">
-                          <span className="truncate flex-1">ghostcast.app/room/{session.id}</span>
+                          <span className="truncate flex-1">/room/{session.id}</span>
                           <Button variant="ghost" size="icon" className="h-6 w-6 hover:text-primary">
                             <LinkIcon className="w-3 h-3" />
                           </Button>
