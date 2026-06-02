@@ -19,12 +19,6 @@ export function Terminal({ title = "GHOST_CONSOLE_v1.0.4", logs, className }: Te
   }, []);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [logs]);
-
-  useEffect(() => {
     if (mounted) {
       const now = new Date().toLocaleTimeString([], { hour12: false });
       setTimestamps(prev => {
@@ -36,6 +30,12 @@ export function Terminal({ title = "GHOST_CONSOLE_v1.0.4", logs, className }: Te
       });
     }
   }, [logs.length, mounted]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [logs]);
 
   return (
     <div className={cn("flex flex-col bg-black border border-primary/30 rounded-sm overflow-hidden hacker-glow", className)}>

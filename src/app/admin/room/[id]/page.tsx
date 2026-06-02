@@ -1,8 +1,6 @@
-import dynamic from "next/dynamic";
+"use client";
 
-const AdminRoomView = dynamic(() => import("@/components/views/AdminRoomView"), {
-  ssr: false,
-});
+import AdminRoomView from "@/components/views/AdminRoomView";
 
 export default function AdminRoomPage() {
   return <AdminRoomView />;

@@ -1,8 +1,6 @@
-import dynamic from "next/dynamic";
+"use client";
 
-const UserRoomView = dynamic(() => import("@/components/views/UserRoomView"), {
-  ssr: false,
-});
+import UserRoomView from "@/components/views/UserRoomView";
 
 export default function UserRoomPage() {
   return <UserRoomView />;
