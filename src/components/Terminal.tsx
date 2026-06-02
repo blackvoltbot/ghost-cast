@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface TerminalProps {
@@ -12,12 +12,32 @@ interface TerminalProps {
 
 export function Terminal({ title = "GHOST_CONSOLE_v1.0.4", logs, className }: TerminalProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const [timestamps, setTimestamps] = useState<string[]>([]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [logs]);
+
+  // Generate or update timestamps only on the client to avoid hydration mismatch
+  useEffect(() => {
+    if (mounted) {
+      const now = new Date().toLocaleTimeString([], { hour12: false });
+      setTimestamps(prev => {
+        const next = [...prev];
+        while (next.length < logs.length) {
+          next.push(now);
+        }
+        return next;
+      });
+    }
+  }, [logs, mounted]);
 
   return (
     <div className={cn("flex flex-col bg-black border border-primary/30 rounded-sm overflow-hidden hacker-glow", className)}>
@@ -38,7 +58,9 @@ export function Terminal({ title = "GHOST_CONSOLE_v1.0.4", logs, className }: Te
       >
         {logs.map((log, i) => (
           <div key={i} className="flex gap-2">
-            <span className="text-primary/40 shrink-0">[{new Date().toLocaleTimeString([], { hour12: false })}]</span>
+            <span className="text-primary/40 shrink-0">
+              [{mounted ? (timestamps[i] || "--:--:--") : "--:--:--"}]
+            </span>
             <span className={cn(
               "break-all",
               log.toLowerCase().includes('error') ? 'text-destructive' : 

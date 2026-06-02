@@ -2,17 +2,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "react-router-dom";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Terminal } from "@/components/Terminal";
-import { Monitor, Mic, Activity, Info, AlertTriangle, ChevronLeft, Zap, Sparkles } from "lucide-react";
+import { Monitor, Info, ChevronLeft, Zap, Sparkles } from "lucide-react";
 import { adminIssueDiagnosis, AdminIssueDiagnosisOutput } from "@/ai/flows/admin-issue-diagnosis";
 
 export default function AdminRoomView() {
   const { id } = useParams();
+  const router = useRouter();
   const [logs, setLogs] = useState(["OPERATOR CONNECTED.", "LISTENING FOR SCREEN DATA...", "SIGNALING STRENGTH: 98%"]);
   const [diagnosis, setDiagnosis] = useState<AdminIssueDiagnosisOutput | null>(null);
   const [diagnosing, setDiagnosing] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const runDiagnosis = async () => {
     setDiagnosing(true);
@@ -37,11 +43,13 @@ export default function AdminRoomView() {
     }
   };
 
+  if (!mounted) return null;
+
   return (
     <div className="min-h-screen bg-[#0D0909] text-white flex flex-col">
       <header className="flex items-center justify-between p-4 border-b border-primary/20 bg-black">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" className="text-primary hover:bg-primary/10 rounded-none p-2" onClick={() => window.history.back()}>
+          <Button variant="ghost" className="text-primary hover:bg-primary/10 rounded-none p-2" onClick={() => router.back()}>
             <ChevronLeft className="w-5 h-5" />
           </Button>
           <div className="space-y-0.5">
@@ -78,7 +86,6 @@ export default function AdminRoomView() {
 
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-4 overflow-hidden">
         <div className="lg:col-span-3 bg-black flex items-center justify-center p-8 relative overflow-hidden">
-           {/* Placeholder for WebRTC Video Element */}
            <div className="w-full max-w-5xl aspect-video border border-primary/30 relative overflow-hidden group hacker-glow">
               <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/ghostcast-1/1280/720')] bg-cover bg-center opacity-40 grayscale" />
               
@@ -87,7 +94,6 @@ export default function AdminRoomView() {
                 <p className="text-primary font-code text-lg tracking-widest font-bold">WAITING FOR USER STREAM...</p>
               </div>
 
-              {/* Overlay elements */}
               <div className="absolute top-4 left-4 flex gap-2">
                 <div className="bg-black/80 px-2 py-1 border border-primary/30 text-[10px] font-code text-primary">REC ●</div>
                 <div className="bg-black/80 px-2 py-1 border border-primary/30 text-[10px] font-code text-primary">ENCRYPTED</div>

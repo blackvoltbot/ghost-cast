@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Terminal } from "@/components/Terminal";
-import { Plus, Link as LinkIcon, Activity, ExternalLink, Trash2 } from "lucide-react";
+import { Plus, Link as LinkIcon, Activity, ExternalLink, Trash2, Zap } from "lucide-react";
 import Link from "next/link";
 import { createSession, SupportSession } from "@/lib/session-store";
 
