@@ -3,9 +3,10 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Monitor, Mic, MicOff, LogOut, ShieldCheck, AlertCircle, MonitorOff } from "lucide-react";
+import { Monitor, Mic, MicOff, LogOut, ShieldCheck, AlertCircle, MonitorOff, HelpCircle, CheckCircle2 } from "lucide-react";
 import { Terminal } from "@/components/Terminal";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface Diagnostics {
   userAgent: string;
@@ -16,8 +17,7 @@ interface Diagnostics {
 
 /**
  * UserRoomView - Handles the remote user's side of the session.
- * Features WebRTC screen and audio capture with detailed logging and diagnostics.
- * Now includes capability checks for mobile/incompatible browser support.
+ * Enhanced with mobile compatibility information and alternative workflows.
  */
 export default function UserRoomView() {
   const { id } = useParams();
@@ -33,7 +33,6 @@ export default function UserRoomView() {
   useEffect(() => {
     setMounted(true);
     
-    // Gather diagnostics only on client mount
     const diag: Diagnostics = {
       userAgent: navigator.userAgent,
       isSecureContext: window.isSecureContext,
@@ -69,7 +68,6 @@ export default function UserRoomView() {
     
     try {
       setLogs(prev => [...prev, "LOG: REQUESTING_SCREEN_SHARE..."]);
-      
       const stream = await navigator.mediaDevices.getDisplayMedia({ 
         video: true,
         audio: true 
@@ -124,7 +122,7 @@ export default function UserRoomView() {
   const isScreenShareSupported = diagnostics?.getDisplayMedia === 'function';
 
   return (
-    <div className="min-h-screen bg-[#0D0909] text-white p-4 flex flex-col items-center justify-center">
+    <div className="min-h-screen bg-[#0D0909] text-white p-4 flex flex-col items-center justify-center font-body">
       <div className="max-w-2xl w-full space-y-8 text-center">
         <div className="space-y-2">
           <div className="flex justify-center">
@@ -135,22 +133,60 @@ export default function UserRoomView() {
           <h1 className="text-3xl font-black tracking-tighter uppercase font-headline">
             Secure Support <span className="text-primary">Session</span>
           </h1>
-          <p className="text-muted-foreground text-sm font-body">Connected to Node: <span className="text-primary font-code">{id}</span></p>
+          <p className="text-muted-foreground text-sm">Connected to Node: <span className="text-primary font-code">{id}</span></p>
         </div>
 
-        {!isScreenShareSupported && mounted && (
-          <Alert variant="destructive" className="bg-destructive/10 border-destructive/30 text-destructive rounded-none text-left">
-            <MonitorOff className="h-4 w-4" />
-            <AlertTitle className="font-black uppercase tracking-widest text-xs">Capability Error</AlertTitle>
-            <AlertDescription className="text-xs font-body opacity-90">
-              Screen sharing is not supported on this device. <br />
-              Use Chrome or Edge on a desktop computer for full functionality.
-            </AlertDescription>
-          </Alert>
+        {!isScreenShareSupported && (
+          <div className="space-y-4">
+            <Alert variant="destructive" className="bg-destructive/10 border-destructive/30 text-destructive rounded-none text-left">
+              <MonitorOff className="h-4 w-4" />
+              <AlertTitle className="font-black uppercase tracking-widest text-xs">Capability Restriction</AlertTitle>
+              <AlertDescription className="text-xs font-body opacity-90">
+                Screen sharing is not supported on this device/browser combination.
+              </AlertDescription>
+            </Alert>
+
+            <Card className="bg-black border-primary/20 rounded-none text-left">
+              <CardContent className="p-6 space-y-6">
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" /> Recommended Browsers
+                  </h3>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <li className="bg-primary/5 p-3 border border-primary/10 flex flex-col">
+                      <span className="text-white text-xs font-bold">Google Chrome</span>
+                      <span className="text-[10px] text-muted-foreground">Desktop (Windows/macOS/Linux)</span>
+                    </li>
+                    <li className="bg-primary/5 p-3 border border-primary/10 flex flex-col">
+                      <span className="text-white text-xs font-bold">Microsoft Edge</span>
+                      <span className="text-[10px] text-muted-foreground">Desktop (Windows/macOS)</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Mic className="w-4 h-4" /> Alternative Mobile Workflow
+                  </h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    You can still communicate via encrypted voice bridge. This allows you to describe issues while the operator monitors your logs remotely.
+                  </p>
+                  <Button 
+                    onClick={toggleMic}
+                    className={`w-full py-6 rounded-none border border-primary/20 flex gap-4 text-xs font-bold tracking-widest uppercase transition-all
+                      ${micOn ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-black hover:bg-primary/10 text-primary'}`}
+                  >
+                    {micOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                    {micOn ? 'Voice Active' : 'Start Audio Bridge'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {isScreenShareSupported && (
+        {isScreenShareSupported && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Button 
               onClick={sharing ? stopSharing : startSharing}
               className={`h-32 rounded-none border border-primary/20 flex flex-col gap-4 text-xs font-bold tracking-widest uppercase transition-all shadow-md
@@ -159,47 +195,45 @@ export default function UserRoomView() {
               <Monitor className="w-8 h-8" />
               {sharing ? 'Stop Sharing' : 'Share Screen'}
             </Button>
-          )}
 
-          <Button 
-            onClick={toggleMic}
-            className={`h-32 rounded-none border border-primary/20 flex flex-col gap-4 text-xs font-bold tracking-widest uppercase transition-all shadow-md
-              ${micOn ? 'bg-primary text-white border-primary shadow-primary/20' : 'bg-black hover:bg-primary/10 text-primary'} ${!isScreenShareSupported ? 'md:col-span-2' : ''}`}
-          >
-            {micOn ? <Mic className="w-8 h-8" /> : <MicOff className="w-8 h-8" />}
-            {micOn ? 'Mic Active' : 'Toggle Audio'}
-          </Button>
-        </div>
+            <Button 
+              onClick={toggleMic}
+              className={`h-32 rounded-none border border-primary/20 flex flex-col gap-4 text-xs font-bold tracking-widest uppercase transition-all shadow-md
+                ${micOn ? 'bg-primary text-white border-primary shadow-primary/20' : 'bg-black hover:bg-primary/10 text-primary'}`}
+            >
+              {micOn ? <Mic className="w-8 h-8" /> : <MicOff className="w-8 h-8" />}
+              {micOn ? 'Mic Active' : 'Toggle Audio'}
+            </Button>
+          </div>
+        )}
 
-        {diagnostics && (
-          <div className="p-4 bg-black border border-primary/20 rounded-sm space-y-3 text-left">
-            <h3 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] flex items-center gap-2">
-              <AlertCircle className="w-3 h-3" /> Environment Diagnostics
-            </h3>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-[9px] text-muted-foreground uppercase font-bold">Secure Context</p>
-                <p className={`text-xs font-code ${diagnostics.isSecureContext ? "text-green-400" : "text-destructive"}`}>
-                  {diagnostics.isSecureContext ? "VERIFIED" : "INSECURE"}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[9px] text-muted-foreground uppercase font-bold">Display Capture API</p>
-                <p className={`text-xs font-code ${diagnostics.getDisplayMedia === 'function' ? "text-green-400" : "text-destructive"}`}>
-                  {diagnostics.getDisplayMedia === 'function' ? "SUPPORTED" : "UNAVAILABLE"}
-                </p>
-              </div>
+        <div className="p-4 bg-black border border-primary/20 rounded-sm space-y-3 text-left">
+          <h3 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] flex items-center gap-2">
+            <AlertCircle className="w-3 h-3" /> System Trace
+          </h3>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <p className="text-[9px] text-muted-foreground uppercase font-bold">Secure Context</p>
+              <p className={`text-xs font-code ${diagnostics?.isSecureContext ? "text-green-400" : "text-destructive"}`}>
+                {diagnostics?.isSecureContext ? "VERIFIED" : "INSECURE"}
+              </p>
             </div>
-
-            <div className="pt-2 border-t border-primary/10">
-              <p className="text-[9px] text-muted-foreground uppercase font-bold mb-1">User Agent Profile</p>
-              <p className="text-[10px] font-code text-primary/60 break-all leading-tight">
-                {diagnostics.userAgent}
+            <div className="space-y-1">
+              <p className="text-[9px] text-muted-foreground uppercase font-bold">Browser Capability</p>
+              <p className={`text-xs font-code ${isScreenShareSupported ? "text-green-400" : "text-destructive"}`}>
+                {isScreenShareSupported ? "FULL_SUPPORT" : "RESTRICTED"}
               </p>
             </div>
           </div>
-        )}
+
+          <div className="pt-2 border-t border-primary/10">
+            <p className="text-[9px] text-muted-foreground uppercase font-bold mb-1">User Agent</p>
+            <p className="text-[10px] font-code text-primary/60 break-all leading-tight">
+              {diagnostics?.userAgent}
+            </p>
+          </div>
+        </div>
 
         <div className="space-y-4">
            <Terminal logs={logs} className="h-48 text-left" />

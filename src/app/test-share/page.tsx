@@ -5,12 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "@/components/Terminal";
-import { Monitor, AlertCircle, CheckCircle2, XCircle, ShieldCheck } from "lucide-react";
+import { Monitor, AlertCircle, CheckCircle2, XCircle, ShieldCheck, HelpCircle } from "lucide-react";
 
 /**
  * Screen Share Test Page
- * Provides a isolated environment to test the getDisplayMedia API
- * and view detailed browser diagnostic information.
+ * Enhanced with device compatibility and mobile support information.
  */
 export default function TestSharePage() {
   const [mounted, setMounted] = useState(false);
@@ -102,37 +101,63 @@ export default function TestSharePage() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="bg-black border-primary/20 rounded-none hacker-glow">
-            <CardHeader className="border-b border-primary/10">
-              <CardTitle className="text-sm font-bold tracking-widest text-primary uppercase flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4" /> Environment
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold">Secure Context</p>
-                  <p className={`text-xs font-code ${diagnostics.isSecureContext ? "text-green-400" : "text-destructive"}`}>
-                    {diagnostics.isSecureContext ? "VERIFIED" : "INSECURE"}
+          <div className="space-y-6">
+            <Card className="bg-black border-primary/20 rounded-none hacker-glow">
+              <CardHeader className="border-b border-primary/10">
+                <CardTitle className="text-sm font-bold tracking-widest text-primary uppercase flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4" /> Environment
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Secure Context</p>
+                    <p className={`text-xs font-code ${diagnostics.isSecureContext ? "text-green-400" : "text-destructive"}`}>
+                      {diagnostics.isSecureContext ? "VERIFIED" : "INSECURE"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Media Devices</p>
+                    <p className="text-xs font-code text-primary/80">{diagnostics.mediaDevices}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Display API</p>
+                    <p className="text-xs font-code text-primary/80">{diagnostics.getDisplayMedia}</p>
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-primary/10">
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1">User Agent</p>
+                  <p className="text-[10px] font-code text-primary/50 break-all leading-tight">
+                    {diagnostics.userAgent}
                   </p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold">Media Devices</p>
-                  <p className="text-xs font-code text-primary/80">{diagnostics.mediaDevices}</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-black border-primary/20 rounded-none">
+              <CardHeader className="border-b border-primary/10">
+                <CardTitle className="text-sm font-bold tracking-widest text-primary uppercase flex items-center gap-2">
+                  <HelpCircle className="w-4 h-4" /> Compatibility
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-4">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Supported Platforms</p>
+                  <ul className="text-xs space-y-1 font-body">
+                    <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-400" /> Windows (Chrome, Edge, Firefox)</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-400" /> macOS (Chrome, Edge, Safari 13+)</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-400" /> Linux (Chrome, Firefox)</li>
+                  </ul>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold">Display API</p>
-                  <p className="text-xs font-code text-primary/80">{diagnostics.getDisplayMedia}</p>
+                <div className="space-y-2 pt-2 border-t border-primary/10">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Mobile Support</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Most mobile browsers (iOS Safari, Android Chrome) do not support the <code className="text-primary">getDisplayMedia</code> API for screen sharing. Audio-only capture is typically available via <code className="text-primary">getUserMedia</code>.
+                  </p>
                 </div>
-              </div>
-              <div className="pt-2 border-t border-primary/10">
-                <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1">User Agent</p>
-                <p className="text-[10px] font-code text-primary/50 break-all leading-tight">
-                  {diagnostics.userAgent}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
 
           <div className="space-y-4">
             <Button 
