@@ -11,11 +11,23 @@ export default function UserRoomView() {
   const router = useRouter();
   const [sharing, setSharing] = useState(false);
   const [micOn, setMicOn] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [logs, setLogs] = useState(["ESTABLISHING HANDSHAKE...", `ROOM_ID: ${id}`, "WAITING FOR OPERATOR COMMANDS..."]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  useEffect(() => {
+    setMounted(true);
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
   const startSharing = async () => {
+    if (typeof window === "undefined" || !navigator.mediaDevices) return;
+    
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({ 
         video: true,
@@ -33,15 +45,20 @@ export default function UserRoomView() {
   };
 
   const stopSharing = () => {
-    streamRef.current?.getTracks().forEach(track => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
     setSharing(false);
     setLogs(prev => [...prev, "SCREEN_TRANSMISSION_TERMINATED."]);
   };
 
   const toggleMic = async () => {
+    if (typeof window === "undefined" || !navigator.mediaDevices) return;
+
     if (!micOn) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        await navigator.mediaDevices.getUserMedia({ audio: true });
         setMicOn(true);
         setLogs(prev => [...prev, "AUDIO_BRIDGE_ACTIVE."]);
       } catch (err) {
@@ -53,11 +70,7 @@ export default function UserRoomView() {
     }
   };
 
-  useEffect(() => {
-    return () => {
-      streamRef.current?.getTracks().forEach(track => track.stop());
-    };
-  }, []);
+  if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-[#0D0909] text-white p-4 flex flex-col items-center justify-center">
@@ -77,8 +90,8 @@ export default function UserRoomView() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Button 
             onClick={sharing ? stopSharing : startSharing}
-            className={`h-32 rounded-none border border-primary/20 flex flex-col gap-4 text-xs font-bold tracking-widest uppercase transition-all
-              ${sharing ? 'bg-primary text-white' : 'bg-black hover:bg-primary/10 text-primary'}`}
+            className={`h-32 rounded-none border border-primary/20 flex flex-col gap-4 text-xs font-bold tracking-widest uppercase transition-all shadow-md
+              ${sharing ? 'bg-primary text-white border-primary shadow-primary/20' : 'bg-black hover:bg-primary/10 text-primary'}`}
           >
             <Monitor className="w-8 h-8" />
             {sharing ? 'Stop Sharing' : 'Share Screen'}
@@ -86,8 +99,8 @@ export default function UserRoomView() {
 
           <Button 
             onClick={toggleMic}
-            className={`h-32 rounded-none border border-primary/20 flex flex-col gap-4 text-xs font-bold tracking-widest uppercase transition-all
-              ${micOn ? 'bg-primary text-white' : 'bg-black hover:bg-primary/10 text-primary'}`}
+            className={`h-32 rounded-none border border-primary/20 flex flex-col gap-4 text-xs font-bold tracking-widest uppercase transition-all shadow-md
+              ${micOn ? 'bg-primary text-white border-primary shadow-primary/20' : 'bg-black hover:bg-primary/10 text-primary'}`}
           >
             {micOn ? <Mic className="w-8 h-8" /> : <MicOff className="w-8 h-8" />}
             {micOn ? 'Mic Active' : 'Toggle Audio'}
