@@ -8,13 +8,22 @@ import { Monitor, Info, ChevronLeft, Zap, Sparkles } from "lucide-react";
 import { adminIssueDiagnosis, AdminIssueDiagnosisOutput } from "@/ai/flows/admin-issue-diagnosis";
 
 export default function AdminRoomView() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id as string;
   const router = useRouter();
-  const [logs, setLogs] = useState(["OPERATOR CONNECTED.", "LISTENING FOR SCREEN DATA...", "SIGNALING STRENGTH: 98%"]);
+  
+  const [mounted, setMounted] = useState(false);
+  const [logs, setLogs] = useState<string[]>([]);
   const [diagnosis, setDiagnosis] = useState<AdminIssueDiagnosisOutput | null>(null);
   const [diagnosing, setDiagnosing] = useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+    setLogs(["OPERATOR CONNECTED.", "LISTENING FOR SCREEN DATA...", "SIGNALING STRENGTH: 98%"]);
+  }, []);
+
   const runDiagnosis = async () => {
+    if (!mounted) return;
     setDiagnosing(true);
     setLogs(prev => [...prev, "AI AGENT ENGAGED.", "ANALYZING SESSION METADATA..."]);
     
@@ -36,6 +45,17 @@ export default function AdminRoomView() {
       setDiagnosing(false);
     }
   };
+
+  // Prevent hydration mismatch by returning null or a static skeleton during SSR
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[#0D0909] flex items-center justify-center">
+        <div className="animate-pulse text-primary font-code uppercase tracking-widest">
+          Initializing Monitor...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0D0909] text-white flex flex-col">
@@ -79,7 +99,7 @@ export default function AdminRoomView() {
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-4 overflow-hidden">
         <div className="lg:col-span-3 bg-black flex items-center justify-center p-8 relative overflow-hidden">
            <div className="w-full max-w-5xl aspect-video border border-primary/30 relative overflow-hidden group hacker-glow">
-              <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/ghostcast-1/1280/720')] bg-cover bg-center opacity-40 grayscale" />
+              <div className="absolute inset-0 bg-black" />
               
               <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4">
                 <Monitor className="w-16 h-16 text-primary animate-pulse" />

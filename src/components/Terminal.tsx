@@ -9,6 +9,11 @@ interface TerminalProps {
   className?: string;
 }
 
+/**
+ * Terminal Component - Fixed for Hydration
+ * Timestamps are generated only after client-side mount to prevent 
+ * mismatch between server and client rendered text.
+ */
 export function Terminal({ title = "GHOST_CONSOLE_v1.0.4", logs, className }: TerminalProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -20,6 +25,7 @@ export function Terminal({ title = "GHOST_CONSOLE_v1.0.4", logs, className }: Te
 
   useEffect(() => {
     if (mounted) {
+      // Use local time only after mounting
       const now = new Date().toLocaleTimeString([], { hour12: false });
       setTimestamps(prev => {
         const next = [...prev];
