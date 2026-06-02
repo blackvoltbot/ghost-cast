@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -15,25 +14,21 @@ export function Terminal({ title = "GHOST_CONSOLE_v1.0.4", logs, className }: Te
   const [mounted, setMounted] = useState(false);
   const [timestamps, setTimestamps] = useState<string[]>([]);
 
-  // Defer rendering until after hydration to prevent mismatches
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Handle auto-scrolling to the bottom of the log list
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [logs]);
 
-  // Generate timestamps only on the client
   useEffect(() => {
     if (mounted) {
       const now = new Date().toLocaleTimeString([], { hour12: false });
       setTimestamps(prev => {
         const next = [...prev];
-        // Ensure every log entry has a corresponding timestamp
         while (next.length < logs.length) {
           next.push(now);
         }
