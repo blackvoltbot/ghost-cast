@@ -3,12 +3,19 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Monitor, Mic, MicOff, LogOut, ShieldCheck } from "lucide-react";
+import { Monitor, Mic, MicOff, LogOut, ShieldCheck, AlertCircle } from "lucide-react";
 import { Terminal } from "@/components/Terminal";
+
+interface Diagnostics {
+  userAgent: string;
+  isSecureContext: boolean;
+  mediaDevices: string;
+  getDisplayMedia: string;
+}
 
 /**
  * UserRoomView - Handles the remote user's side of the session.
- * Features WebRTC screen and audio capture with detailed logging.
+ * Features WebRTC screen and audio capture with detailed logging and diagnostics.
  */
 export default function UserRoomView() {
   const { id } = useParams();
@@ -16,69 +23,81 @@ export default function UserRoomView() {
   const [sharing, setSharing] = useState(false);
   const [micOn, setMicOn] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [diagnostics, setDiagnostics] = useState<Diagnostics | null>(null);
   const [logs, setLogs] = useState(["ESTABLISHING HANDSHAKE...", `ROOM_ID: ${id}`, "WAITING FOR OPERATOR COMMANDS..."]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     setMounted(true);
+    
+    // Gather diagnostics only on client mount
+    const diag: Diagnostics = {
+      userAgent: navigator.userAgent,
+      isSecureContext: window.isSecureContext,
+      mediaDevices: typeof navigator.mediaDevices,
+      getDisplayMedia: typeof navigator.mediaDevices?.getDisplayMedia,
+    };
+    
+    setDiagnostics(diag);
+    setLogs(prev => [
+      ...prev, 
+      "SYSTEM_DIAG_REPORT_GENERATED",
+      `UA: ${diag.userAgent}`,
+      `SECURE_CONTEXT: ${diag.isSecureContext}`,
+      `MEDIADEV_SUPPORT: ${diag.mediaDevices}`,
+      `DISPLAY_CAP_SUPPORT: ${diag.getDisplayMedia}`
+    ]);
+
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
     };
-  }, []);
+  }, [id]);
 
   const startSharing = async () => {
-    console.log("Share button clicked");
-    setLogs(prev => [...prev, "LOG: Share button clicked"]);
+    setLogs(prev => [...prev, "ACTION: SHARE_BUTTON_CLICKED"]);
     
     if (typeof window === "undefined" || !navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-      const errorMsg = "ERROR: Screen sharing (getDisplayMedia) is not supported in this browser environment.";
-      console.error(errorMsg);
+      const errorMsg = "CRITICAL_ERROR: getDisplayMedia is undefined in this environment.";
       setLogs(prev => [...prev, errorMsg]);
       return;
     }
     
     try {
-      console.log("Requesting screen share");
-      setLogs(prev => [...prev, "LOG: Requesting screen share permissions..."]);
+      setLogs(prev => [...prev, "LOG: REQUESTING_SCREEN_SHARE..."]);
       
       const stream = await navigator.mediaDevices.getDisplayMedia({ 
         video: true,
         audio: true 
       });
       
-      console.log("Screen share granted");
       streamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
       setSharing(true);
-      setLogs(prev => [...prev, "SUCCESS: Screen share granted", "TRANSMITTING TO REMOTE TERMINAL..."]);
+      setLogs(prev => [...prev, "SUCCESS: CAPTURE_GRANTED", "LOG: TRANSMITTING_DATA_STREAMS..."]);
       
-      // Handle the case where the user clicks "Stop sharing" in the browser UI
       stream.getVideoTracks()[0].onended = () => {
-        console.log("Screen share ended by user/system");
+        setLogs(prev => [...prev, "LOG: SHARE_ENDED_BY_SYSTEM"]);
         stopSharing();
       };
     } catch (err: any) {
       if (err.name === 'NotAllowedError') {
-        console.warn("Screen share denied");
-        setLogs(prev => [...prev, "ERROR: Screen share denied by user."]);
+        setLogs(prev => [...prev, "ERROR: PERMISSION_DENIED_BY_USER"]);
       } else {
-        console.error("Screen share error:", err);
-        setLogs(prev => [...prev, `ERROR: ${err.message || "Failed to initialize capture"}`]);
+        setLogs(prev => [...prev, `ERROR: ${err.message || "INITIALIZATION_FAILED"}`]);
       }
     }
   };
 
   const stopSharing = () => {
-    console.log("Stopping transmission");
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
     setSharing(false);
-    setLogs(prev => [...prev, "SCREEN_TRANSMISSION_TERMINATED."]);
+    setLogs(prev => [...prev, "STATUS: TRANSMISSION_TERMINATED"]);
   };
 
   const toggleMic = async () => {
@@ -88,13 +107,13 @@ export default function UserRoomView() {
       try {
         await navigator.mediaDevices.getUserMedia({ audio: true });
         setMicOn(true);
-        setLogs(prev => [...prev, "AUDIO_BRIDGE_ACTIVE."]);
+        setLogs(prev => [...prev, "STATUS: AUDIO_BRIDGE_ACTIVE"]);
       } catch (err) {
-        setLogs(prev => [...prev, "ERROR: MIC_ACCESS_DENIED."]);
+        setLogs(prev => [...prev, "ERROR: MIC_ACCESS_DENIED"]);
       }
     } else {
       setMicOn(false);
-      setLogs(prev => [...prev, "AUDIO_BRIDGE_SUSPENDED."]);
+      setLogs(prev => [...prev, "STATUS: AUDIO_BRIDGE_SUSPENDED"]);
     }
   };
 
@@ -112,7 +131,7 @@ export default function UserRoomView() {
           <h1 className="text-3xl font-black tracking-tighter uppercase font-headline">
             Secure Support <span className="text-primary">Session</span>
           </h1>
-          <p className="text-muted-foreground text-sm font-body">You are connected to GhostCast Node: <span className="text-primary font-code">{id}</span></p>
+          <p className="text-muted-foreground text-sm font-body">Connected to Node: <span className="text-primary font-code">{id}</span></p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -134,6 +153,36 @@ export default function UserRoomView() {
             {micOn ? 'Mic Active' : 'Toggle Audio'}
           </Button>
         </div>
+
+        {diagnostics && (
+          <div className="p-4 bg-black border border-primary/20 rounded-sm space-y-3 text-left">
+            <h3 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] flex items-center gap-2">
+              <AlertCircle className="w-3 h-3" /> Environment Diagnostics
+            </h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-[9px] text-muted-foreground uppercase font-bold">Secure Context</p>
+                <p className={`text-xs font-code ${diagnostics.isSecureContext ? "text-green-400" : "text-destructive"}`}>
+                  {diagnostics.isSecureContext ? "VERIFIED" : "INSECURE"}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[9px] text-muted-foreground uppercase font-bold">Display Capture API</p>
+                <p className={`text-xs font-code ${diagnostics.getDisplayMedia === 'function' ? "text-green-400" : "text-destructive"}`}>
+                  {diagnostics.getDisplayMedia === 'function' ? "SUPPORTED" : "UNAVAILABLE"}
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-primary/10">
+              <p className="text-[9px] text-muted-foreground uppercase font-bold mb-1">User Agent Profile</p>
+              <p className="text-[10px] font-code text-primary/60 break-all leading-tight">
+                {diagnostics.userAgent}
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-4">
            <Terminal logs={logs} className="h-48 text-left" />
