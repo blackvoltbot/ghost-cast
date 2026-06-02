@@ -1,0 +1,17 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hacker-bg",
+      "description": "Abstract red and black digital data streams.",
+      "imageUrl": "https://picsum.photos/seed/ghostcast-1/1920/1080",
+      "imageHint": "hacker data"
+    },
+    {
+      "id": "admin-avatar",
+      "description": "Tech-focused professional avatar.",
+      "imageUrl": "https://picsum.photos/seed/ghostcast-2/200/200",
+      "imageHint": "tech avatar"
+    }
+  ]
+}
