@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Monitor, Mic, MicOff, LogOut, ShieldCheck } from "lucide-react";
 import { Terminal } from "@/components/Terminal";
 
+/**
+ * UserRoomView - Handles the remote user's side of the session.
+ * Features WebRTC screen and audio capture with detailed logging.
+ */
 export default function UserRoomView() {
   const { id } = useParams();
   const router = useRouter();
@@ -26,25 +30,49 @@ export default function UserRoomView() {
   }, []);
 
   const startSharing = async () => {
-    if (typeof window === "undefined" || !navigator.mediaDevices) return;
+    console.log("Share button clicked");
+    setLogs(prev => [...prev, "LOG: Share button clicked"]);
+    
+    if (typeof window === "undefined" || !navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      const errorMsg = "ERROR: Screen sharing (getDisplayMedia) is not supported in this browser environment.";
+      console.error(errorMsg);
+      setLogs(prev => [...prev, errorMsg]);
+      return;
+    }
     
     try {
+      console.log("Requesting screen share");
+      setLogs(prev => [...prev, "LOG: Requesting screen share permissions..."]);
+      
       const stream = await navigator.mediaDevices.getDisplayMedia({ 
         video: true,
         audio: true 
       });
+      
+      console.log("Screen share granted");
       streamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
       setSharing(true);
-      setLogs(prev => [...prev, "SUCCESS: SCREEN_CAPTURE_ACTIVE", "TRANSMITTING TO REMOTE TERMINAL..."]);
+      setLogs(prev => [...prev, "SUCCESS: Screen share granted", "TRANSMITTING TO REMOTE TERMINAL..."]);
       
-      stream.getVideoTracks()[0].onended = () => stopSharing();
-    } catch (err) {
-      setLogs(prev => [...prev, "ERROR: ACCESS_DENIED", "USER REFUSED PERMISSIONS."]);
+      // Handle the case where the user clicks "Stop sharing" in the browser UI
+      stream.getVideoTracks()[0].onended = () => {
+        console.log("Screen share ended by user/system");
+        stopSharing();
+      };
+    } catch (err: any) {
+      if (err.name === 'NotAllowedError') {
+        console.warn("Screen share denied");
+        setLogs(prev => [...prev, "ERROR: Screen share denied by user."]);
+      } else {
+        console.error("Screen share error:", err);
+        setLogs(prev => [...prev, `ERROR: ${err.message || "Failed to initialize capture"}`]);
+      }
     }
   };
 
   const stopSharing = () => {
+    console.log("Stopping transmission");
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
@@ -120,7 +148,7 @@ export default function UserRoomView() {
         </div>
       </div>
 
-      <video ref={videoRef} className="hidden" autoPlay playsInline />
+      <video ref={videoRef} className="hidden" autoPlay playsInline muted />
     </div>
   );
 }
